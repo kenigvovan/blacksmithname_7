@@ -13,6 +13,18 @@ namespace blacksmithname.src.Compat
     {
         public static Harmony harmonyInstance;
         public const string harmonyID = "blacksmithnametoolnamecompat.Patches";
+        public override bool ShouldLoad(ICoreAPI api)
+        {
+            if (base.ShouldLoad(api))
+            {
+                if (api.Side == EnumAppSide.Client || !api.ModLoader.IsModEnabled("toolsmith"))
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
         public override void StartClientSide(ICoreClientAPI api)
         {
             base.StartClientSide(api);
@@ -26,6 +38,10 @@ namespace blacksmithname.src.Compat
                 harmonyInstance.Patch(typeof(Toolworks.ItemHaftedTool).GetMethod("GetHeldItemInfo"),
                     postfix: new HarmonyMethod(typeof(harmPatches).GetMethod("Postfix_GetHeldItemInfo_Toolworks")));
             }
+        }
+        public override void Dispose()
+        {
+            harmonyInstance?.UnpatchAll(harmonyID);
         }
     }
 }

@@ -36,7 +36,7 @@ namespace blacksmithname.src
             var codes = new List<CodeInstruction>(instructions);
             var decMethod = AccessTools.GetDeclaredMethods(typeof(IWorldAccessor))
             .Where(m => m.Name == "SpawnItemEntity" && m.GetParameters().Types().Contains(typeof(ItemStack)) && m.GetParameters().Types().Contains(typeof(Vec3d)) && m.GetParameters().Types().Contains(typeof(Vec3d)))
-            .Single();
+            .First();
             var proxyMethod = AccessTools.Method(typeof(harmPatches), "addName");
             for (int i = 0; i < codes.Count; i++)
             {
@@ -60,7 +60,7 @@ namespace blacksmithname.src
         {
             if (byPlayer != null)
             {
-                if (itemStack.Item != null && (itemStack.Item.Shape.Base.Path.StartsWith("item/tool") 
+                if (itemStack.Item != null && ((itemStack.Item.Shape.Base.Path.StartsWith("item/tool") || itemStack.Item.Shape.Base.Path.StartsWith("item/parts")) 
                     || itemStack.Item.Shape.Base.Path.StartsWith("item/spytube")
                     || itemStack.Item.Code.Domain.Equals("xmelee")))
                 {

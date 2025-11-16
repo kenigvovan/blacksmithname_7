@@ -57,7 +57,7 @@ namespace blacksmithname.src
         }
         public override void Dispose()
         {
-            harmonyInstance.UnpatchAll();
+            harmonyInstance.UnpatchAll(harmonyID);
         }
         public override void StartClientSide(ICoreClientAPI api)
         {

@@ -2,10 +2,10 @@
   "type": "code",
   "modid": "blacksmithname",
   "name": "blacksmithname",
-  "author": "KenigVovan",
+    "authors": [ "KenigVovan" ],
   "description": "Add name to forged items",
-  "version": "1.1.7",
-  "dependency": {
+  "version": "1.2.3",
+  "dependencies": {
     "game": ""
   }
 }
