@@ -32,11 +32,11 @@ namespace blacksmithname.src.Compat
             if (api.ModLoader.IsModEnabled("toolworks"))
             {
                 harmonyInstance.Patch(typeof(Toolworks.ItemCompositeTool).GetMethod("GetHeldItemInfo"),
-                    postfix: new HarmonyMethod(typeof(harmPatches).GetMethod("Postfix_GetHeldItemInfo_Toolworks")));
+                    postfix: AccessTools.Method(typeof(HarmonyPatches), nameof(HarmonyPatches.Postfix_GetHeldItemInfo_Toolworks)));
                 harmonyInstance.Patch(typeof(Toolworks.ItemBoundTool).GetMethod("GetHeldItemInfo"),
-                    postfix: new HarmonyMethod(typeof(harmPatches).GetMethod("Postfix_GetHeldItemInfo_Toolworks")));
+                    postfix: AccessTools.Method(typeof(HarmonyPatches), nameof(HarmonyPatches.Postfix_GetHeldItemInfo_Toolworks)));
                 harmonyInstance.Patch(typeof(Toolworks.ItemHaftedTool).GetMethod("GetHeldItemInfo"),
-                    postfix: new HarmonyMethod(typeof(harmPatches).GetMethod("Postfix_GetHeldItemInfo_Toolworks")));
+                    postfix: AccessTools.Method(typeof(HarmonyPatches), nameof(HarmonyPatches.Postfix_GetHeldItemInfo_Toolworks)));
             }
         }
         public override void Dispose()

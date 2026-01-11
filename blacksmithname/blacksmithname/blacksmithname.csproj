@@ -11,6 +11,10 @@
       <HintPath>..\..\..\..\..\AppData\Roaming\Vintagestory\Lib\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\..\..\..\..\AppData\Roaming\Vintagestory\Lib\protobuf-net.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="toolworks">
       <HintPath>..\..\..\libs\toolworks.dll</HintPath>
       <Private>False</Private>

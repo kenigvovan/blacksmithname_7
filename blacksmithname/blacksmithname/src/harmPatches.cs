@@ -16,19 +16,8 @@ using Vintagestory.GameContent;
 namespace blacksmithname.src
 {
     [HarmonyPatch]
-    public class harmPatches
+    public class HarmonyPatches
     {
-        /*public static void Postfix_CollectibleObject_OnCreatedByCrafting(Vintagestory.GameContent.ItemWearable __instance, ItemSlot[] allInputslots, ItemSlot outputSlot, GridRecipe byRecipe)
-        {
-            if (outputSlot is DummySlot)
-            {
-                return;
-            }
-            if (!byRecipe.Name.Path.Contains("repair"))
-            {
-                outputSlot.Itemstack.Attributes.SetString("smithname", it.Itemstack.Attributes.GetString("smithname"));
-            }
-        }*/
         public static FieldInfo BlockEntityAnvilworkItemStack = typeof(BlockEntityAnvil).GetField("workItemStack", BindingFlags.NonPublic | BindingFlags.Instance);
         public static IEnumerable<CodeInstruction> Transpiler_BlockEntityAnvil_CheckIfFinished(IEnumerable<CodeInstruction> instructions)
         {
@@ -37,7 +26,7 @@ namespace blacksmithname.src
             var decMethod = AccessTools.GetDeclaredMethods(typeof(IWorldAccessor))
             .Where(m => m.Name == "SpawnItemEntity" && m.GetParameters().Types().Contains(typeof(ItemStack)) && m.GetParameters().Types().Contains(typeof(Vec3d)) && m.GetParameters().Types().Contains(typeof(Vec3d)))
             .First();
-            var proxyMethod = AccessTools.Method(typeof(harmPatches), "addName");
+            var proxyMethod = AccessTools.Method(typeof(HarmonyPatches), nameof(HarmonyPatches.AddSmithName));
             for (int i = 0; i < codes.Count; i++)
             {
                 if (!found &&
@@ -45,10 +34,8 @@ namespace blacksmithname.src
                 {
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
                     yield return new CodeInstruction(OpCodes.Ldloc_0);
-                    //yield return new CodeInstruction(OpCodes.Ldloc_0);
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return new CodeInstruction(OpCodes.Ldfld, BlockEntityAnvilworkItemStack);
-                    //get workingitem
                     yield return new CodeInstruction(OpCodes.Call, proxyMethod);
                     found = true;
                 }
@@ -56,27 +43,28 @@ namespace blacksmithname.src
             }
         }
         
-        public static void addName(IServerPlayer byPlayer, ItemStack itemStack, ItemStack workItemStack)
+        public static void AddSmithName(IServerPlayer byPlayer, ItemStack itemStack, ItemStack workItemStack)
         {
             if (byPlayer != null)
             {
                 if (itemStack.Item != null && ((itemStack.Item.Shape.Base.Path.StartsWith("item/tool") || itemStack.Item.Shape.Base.Path.StartsWith("item/parts")) 
                     || itemStack.Item.Shape.Base.Path.StartsWith("item/spytube")
-                    || itemStack.Item.Code.Domain.Equals("xmelee")))
+                    || itemStack.Item.Code.Domain.Equals("xmelee")
+                    || blacksmithname.config.itemCodesToAddAttribute.Any(it => itemStack.Item.Code.Path.StartsWith(it))))
                 {
-                    itemStack.Attributes.SetString("smithname", byPlayer.PlayerName);
+                    itemStack.Attributes.SetString(blacksmithname.smithnameAttributeName, byPlayer.PlayerName);
                 }
             }
             else
             {
                 if (workItemStack != null)
-                    if (workItemStack?.Attributes?.HasAttribute("smithname") ?? false)
+                    if (workItemStack?.Attributes?.HasAttribute(blacksmithname.smithnameAttributeName) ?? false)
                 {
                     if (itemStack.Item != null && (itemStack.Item.Shape.Base.Path.StartsWith("item/tool")
                     || itemStack.Item.Shape.Base.Path.StartsWith("item/spytube")
                     || itemStack.Item.Code.Domain.Equals("xmelee")))
                     {
-                        itemStack.Attributes.SetString(workItemStack.Attributes.GetString("smithname"), byPlayer.PlayerName);
+                        itemStack.Attributes.SetString(workItemStack.Attributes.GetString(blacksmithname.smithnameAttributeName), byPlayer.PlayerName);
                     }
                 }
             }
@@ -87,7 +75,7 @@ namespace blacksmithname.src
             {
                 if(___workItemStack != null)
                 {
-                    ___workItemStack.Attributes.SetString("smithname", byPlayer.PlayerName);
+                    ___workItemStack.Attributes.SetString(blacksmithname.smithnameAttributeName, byPlayer.PlayerName);
                 }
             }
         }
@@ -96,7 +84,7 @@ namespace blacksmithname.src
         {
             if (___workItemStack != null)
             {
-                ___workItemStack.Attributes.RemoveAttribute("smithname");
+                ___workItemStack.Attributes.RemoveAttribute(blacksmithname.smithnameAttributeName);
             }
             
         }
@@ -108,10 +96,24 @@ namespace blacksmithname.src
                                                                                       bool withDebugInfo)
         {
             ItemStack itemstack = inSlot.Itemstack;
-            string smithName = itemstack.Attributes.GetString("smithname");
+            string smithName = itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName);
             if (smithName != null && !(smithName.Length == 0))
             {
-                dsc.Append(Lang.Get(blacksmithname.getID() + ":smithed_by", "<font color=\"" + Lang.Get(blacksmithname.getID() + ":playername_color") + "\">" + smithName + "</font>")).Append("\n");
+                dsc.Append(Lang.Get(blacksmithname.modID + ":smithed_by", "<font color=\"" + blacksmithname.config.nameColor + "\">" + smithName + "</font>")).Append("\n");
+                return;
+            }
+            if (itemstack.Attributes.HasAttribute("tinkeredToolHead"))
+            {
+                var tree = itemstack.Attributes.GetItemstack("tinkeredToolHead");
+                if (tree != null)
+                {
+                    smithName = tree.Attributes.GetString(blacksmithname.smithnameAttributeName, null);
+                    if (smithName != null)
+                    {
+                        dsc.Append(Lang.Get(blacksmithname.modID + ":smithed_by", "<font color=\""  + blacksmithname.config.nameColor + "\">" + smithName + "</font>")).Append("\n");
+                        return;
+                    }
+                }
             }
             return;
         }
@@ -125,10 +127,10 @@ namespace blacksmithname.src
             var itemStackAttribute = itemstack.Attributes.GetItemstack("Head");
             if(itemStackAttribute != null) 
             {
-                string smithName = itemStackAttribute.Attributes.GetString("smithname");
+                string smithName = itemStackAttribute.Attributes.GetString(blacksmithname.smithnameAttributeName);
                 if (smithName != null && !(smithName.Length == 0))
                 {
-                    dsc.Append(Lang.Get(blacksmithname.getID() + ":smithed_by", "<font color=\"" + Lang.Get(blacksmithname.getID() + ":playername_color") + "\">" + smithName + "</font>")).Append("\n");
+                    dsc.Append(Lang.Get(blacksmithname.modID + ":smithed_by", "<font color=\""  + blacksmithname.config.nameColor + "\">" + smithName + "</font>")).Append("\n");
                 }
                 return;
             }
@@ -148,29 +150,28 @@ namespace blacksmithname.src
             string twoAuthors = "";
             foreach (var it in allInputslots)
             {
-                if (it.Itemstack != null && it.Itemstack.Attributes.GetString("smithname") != null)
+                if (it.Itemstack != null && it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName) != null)
                 {
                     if (it.Itemstack.Item.Code.Path.StartsWith("xweapongrip"))
                     {
-                        it.Itemstack.Attributes.SetString("smithname", "notme");
-                        if (twoAuthors != "" && !it.Itemstack.Attributes.GetString("smithname").Equals(twoAuthors))
+                        if (twoAuthors != "" && !it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName).Equals(twoAuthors))
                         {
-                            twoAuthors += " & " + it.Itemstack.Attributes.GetString("smithname");
+                            twoAuthors += " & " + it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName);
                         }               
-                        outputSlot.Itemstack.Attributes.SetString("smithname", twoAuthors);
+                        outputSlot.Itemstack.Attributes.SetString(blacksmithname.smithnameAttributeName, twoAuthors);
                         return;
                     }
                     if(it.Itemstack.Item.Code.Path.StartsWith("xspearhead") || it.Itemstack.Item.Code.Path.StartsWith("xhalberdhead"))
                     {
-                        outputSlot.Itemstack.Attributes.SetString("smithname", it.Itemstack.Attributes.GetString("smithname"));
+                        outputSlot.Itemstack.Attributes.SetString(blacksmithname.smithnameAttributeName, it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName));
                         return;
                     }
                     if(it.Itemstack.Item.Code.Domain.StartsWith("xmelee"))
                     {
-                        twoAuthors = it.Itemstack.Attributes.GetString("smithname");
+                        twoAuthors = it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName);
                         continue;
                     }
-                    outputSlot.Itemstack.Attributes.SetString("smithname", it.Itemstack.Attributes.GetString("smithname"));
+                    outputSlot.Itemstack.Attributes.SetString(blacksmithname.smithnameAttributeName, it.Itemstack.Attributes.GetString(blacksmithname.smithnameAttributeName));
                     return;
                 }
             }
